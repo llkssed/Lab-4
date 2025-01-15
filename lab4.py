@@ -3,11 +3,9 @@ import requests
 from telegram import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import *
 
-# Логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger("bot-logger")
 
-# Переменные
 TOKEN = '7947566711:AAHAXk-W3S2ZPUVAqHvbrKIzXIxso0zVKiM'
 API_BASE_URL = 'https://cnichols1734.pythonanywhere.com'
 USER_SETTINGS = {}
@@ -21,7 +19,6 @@ kbm = ReplyKeyboardMarkup([[
 ]], resize_keyboard=True)
 
 async def start(update, context) -> None:
-    """Ответы на команду /start."""
     await update.message.reply_text(
         'Привет! Я ваш бот, предоставляющий случайные факты. Попробуйте /random, /get_categories, /random_by_category или /set_category.',
         reply_markup=kbm
@@ -29,7 +26,6 @@ async def start(update, context) -> None:
 
 
 async def get_random_fact(update, context) -> None:
-    """Получение случайного факта."""
     try:
         response = requests.get(f'{API_BASE_URL}/facts/random')
         response.raise_for_status()
@@ -41,7 +37,6 @@ async def get_random_fact(update, context) -> None:
 
 
 def get_categories_list() -> list:
-    """Получение списка категорий."""
     try:
         response = requests.get(f'{API_BASE_URL}/categories')
         response.raise_for_status()
@@ -52,12 +47,10 @@ def get_categories_list() -> list:
 
 
 async def get_categories(update, context) -> None:
-    """Получение списка категорий /get_categories."""
     await update.message.reply_text(f"Доступные категории: {", ".join(get_categories_list())}")
 
 
 async def get_random_fact_by_category(update, context) -> None:
-    """Получение случайного факта по указанной категории или по сохранённой пользовательской настройке."""
     category = ' '.join(context.args).title()
     if not category:
         user_id = update.message.from_user.id
@@ -74,7 +67,6 @@ async def get_random_fact_by_category(update, context) -> None:
 
 
 async def set_category(update, context) -> None:
-    """Выбор и сохранение предпочтительной категории для пользователя через инлайн-кнопки."""
     categories = get_categories_list()
     if categories:
         keyboard = [[InlineKeyboardButton(cat, callback_data=f'set_category_{cat}')] for cat in categories]
@@ -85,7 +77,6 @@ async def set_category(update, context) -> None:
 
 
 async def button(update, context) -> None:
-    """Обработка нажатий на инлайн-кнопки."""
     query = update.callback_query
     query.answer()
 
@@ -98,24 +89,18 @@ async def button(update, context) -> None:
 
 
 def main() -> None:
-    """Запуск бота."""
-
-
+    
     application = Application.builder().token(TOKEN).build()
-
-    # Обработчики команд
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("random", get_random_fact))
     application.add_handler(CommandHandler("get_categories", get_categories))
     application.add_handler(CommandHandler("random_by_category", get_random_fact_by_category))
     application.add_handler(CommandHandler("set_category", set_category))
 
-    # Обработчик для инлайн-кнопок
     application.add_handler(CallbackQueryHandler(button))
 
-    # Запуск
     application.run_polling(1.0)
-
 
 if __name__ == '__main__':
     main()
